@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="css/login-modal.css?version=20210301">
+    <title>Virtual Bandung</title>
+  </head>
+  <body>
+    <section id="loginArea" class="login-area">
+      <div id="loginBg" class="login-bg"></div>
+
+      <div class="login-wrapper">
+        <div class="login-contents">
+          <h1 class="login-contents__head">Login</h1>
+
+          <form id="form" class="login-contents__form">
+            <div class="login-contents__field">
+              <label for="mailAddress" class="login-contents__label">Email
+                <span id="mailAddressMsg" class="login-contents__field-msg login-contents__hidden">Please input a valid email address</span>
+              </label>
+              <input type="email" name="formInput" id="mailAddress" class="login-contents__input" placeholder="Type your email address" required>
+            </div>
+            <div id="signupFields" class="login-contents__hidden">
+              <div class="login-contents__field">
+                <label for="age" class="login-contents__label">Age
+                  <span id="ageMsg" class="login-contents__field-msg login-contents__hidden">Please select an age</span>
+                </label>
+                <select type="text" name="formInput" id="age" class="login-contents__input">
+                  <option value="" style="display: none;" selected>Select your age</option>
+                </select>
+              </div>
+              <div class="login-contents__field">
+                <label for="birthplace" class="login-contents__label">Birthplace
+                  <span id="birthplaceMsg" class="login-contents__field-msg login-contents__hidden">Please select a birthplace</span>
+                </label>
+                <select type="text" name="formInput" id="birthplace" class="login-contents__input">
+                  <option value="" style="display: none;" selected>Select your birthplace</option>
+                </select>
+              </div>
+              <div class="login-contents__field">
+                <label for="residence" class="login-contents__label">Residence
+                  <span id="residenceMsg" class="login-contents__field-msg login-contents__hidden">Please select a residence</span>
+                </label>
+                <select type="text" name="formInput" id="residence" class="login-contents__input">
+                  <option value="" style="display: none;" selected>Select your residence</option>
+                </select>
+              </div>
+              <div class="login-contents__field">
+                <label for="sex" class="login-contents__label">Sex
+                  <span id="sexMsg" class="login-contents__field-msg login-contents__hidden">Please select a sex</span>
+                </label>
+                <select type="text" name="formInput" id="sex" class="login-contents__input">
+                  <option value="" style="display: none;" selected>Select your sex</option>
+                </select>
+              </div>
+            </div>
+            <div class="login-contents__field login-contents__hidden">
+              <input type="hidden" name="formInput" id="mode" value="1">
+            </div>
+
+            <div id="msg" class="login-contents__message"></div>
+            <div class="login-contents__form-button">
+              <button type="button" name="enterBtn" id="enterBtn" class="login-contents__button">ENTER</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="playArea"></section>
+
+    <script src="js/login-modal.js?version=20210301"></script>
+    <script src="js/libs/pixi.js?version=20210301"></script>
+  </body>
+</html>
