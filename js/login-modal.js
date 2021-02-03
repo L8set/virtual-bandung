@@ -4,6 +4,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
 (() => {
   const Selector = {
     LOGIN_AREA: '#loginArea',
+    FORM: '#form',
     EMAIL: '#mailAddress',
     SIGNUP_FIELDS: '#signupFields',
     AGE: '#age',
@@ -46,6 +47,10 @@ VirtualBandung.Login = VirtualBandung.Login || {};
   const Result = {
     OK: 'ok',
     NG: 'ng'
+  };
+
+  const SessionKey = {
+    ID: 'virtual_bandung_login_id'
   };
 
   const webAppUrl = 'https://script.google.com/macros/s/AKfycbzBsIYHoMt4qV01d6hwTEpxMEXqxchGka5w7Ask-J2FRvfJnnB_FQy2UQ/exec';
@@ -128,8 +133,10 @@ VirtualBandung.Login = VirtualBandung.Login || {};
   function checkField(fieldSelector, msgSelector, test) {
     const {value} = document.querySelector(fieldSelector);
     const {classList: msgClassList} = document.querySelector(msgSelector);
-    if (test(value) && !msgClassList.contains(CssClass.HIDDEN)) {
-      msgClassList.add(CssClass.HIDDEN);
+    if (test(value)) {
+      if (!msgClassList.contains(CssClass.HIDDEN)) {
+        msgClassList.add(CssClass.HIDDEN);
+      }
       return true;
     } else if (msgClassList.contains(CssClass.HIDDEN)) {
       msgClassList.remove(CssClass.HIDDEN);
@@ -155,7 +162,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
   }
 
   function sendForm() {
-    if (!checkInput()) return;
+    if (!checkInput()) return false;
 
     const queryParams = Array.from(document.querySelectorAll(Selector.FORM_INPUT))
         .filter(input => input)
@@ -169,6 +176,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
           switch (response.result) {
           case Result.OK:
             VirtualBandung.Login.id = response.id;
+            window.sessionStorage.setItem([SessionKey.ID], [VirtualBandung.Login.id])
             VirtualBandung.Login.msg = '';
             const loginArea = document.querySelector(Selector.LOGIN_AREA);
             fade(loginArea, 500, FadeMode.OUT);
@@ -189,6 +197,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
             break;
           }
         });
+    return false;
   }
   
   function init() {
@@ -198,9 +207,13 @@ VirtualBandung.Login = VirtualBandung.Login || {};
     const enterBtn = document.querySelector(Selector.ENTER_BTN);
     enterBtn.addEventListener('click', sendForm);
 
+    const form = document.querySelector(Selector.FORM);
+    form.addEventListener('submit', sendForm);
+
     VirtualBandung.Login.mode = SendMode.LOGIN;
   }
 
+  VirtualBandung.Login.id = window.sessionStorage.getItem([SessionKey.ID]);
   if (!VirtualBandung.Login.id) {
     init();
     createSignUpContents();
