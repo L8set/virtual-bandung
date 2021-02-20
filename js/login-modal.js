@@ -196,7 +196,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
               VirtualBandung.Login.msg = response.msg;
 
               const modeElement = document.getElementById(CONSTS.ELEMENT_ID.MODE);
-              showSignupFields();
+              this.showSignupFields();
               modeElement.value = VirtualBandung.Login.mode = CONSTS.SEND_MODE.SIGNUP;
 
               const msgElement = document.getElementById(CONSTS.ELEMENT_ID.MSG);
