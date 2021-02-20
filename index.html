@@ -6,6 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link rel="stylesheet" href="css/login-modal.css?version=20210301">
+    <link rel="stylesheet" href="css/virtual-bandung.css?version=20210301">
     <title>Virtual Bandung</title>
   </head>
   <body>
@@ -70,9 +71,16 @@
       </div>
     </section>
 
-    <section class="playArea"></section>
+    <section id="playArea" class="play-area">
+      <div class="play-wrapper">
+        <div class="play-content">
+          <canvas id="playCanvas" class="play-canvas"></canvas>
+        </div>
+      </div>
+    </section>
 
     <script src="js/login-modal.js?version=20210301"></script>
     <script src="js/libs/pixi.js?version=20210301"></script>
+    <script src="js/virtual-bandung.js?version=20210301"></script>
   </body>
 </html>
