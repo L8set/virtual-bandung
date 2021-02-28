@@ -1,0 +1,28 @@
+.webgl-content * {
+    border: 0;
+    margin: 0;
+    padding: 0
+}
+
+.webgl-content {}
+
+.top_icon {}
+
+.youtubeframe,
+.unity {
+    position: absolute;
+}
+
+.unity {
+    width: 1440px;
+    height: 933px;
+}
+
+#myIFrame {
+    position: absolute;
+    width: 1191px;
+    height: 670px;
+    left: 124.5px;
+    top: 131.5px;
+    display: none;
+}

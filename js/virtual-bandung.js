@@ -5,7 +5,12 @@ VirtualBandung.Play = VirtualBandung.Play || {};
   const CONSTS = {
     ELEMENT_ID: {
       AREA: 'playArea',
-      WRAPPER: 'playWrapper'
+      WRAPPER: 'playWrapper',
+      URP: 'scuadUrp',
+      URP_LINK: 'urpLink'
+    },
+    ELEMENT_CLASS: {
+      HIDDEN: 'hidden-section'
     },
     FILE_TYPE: {
       PNG: 1,
@@ -16,13 +21,18 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       FAR_POINT: 2/5
     },
     Z: {
-      FIELD: 1,
-      CHARACTER: 30,
-      BUILDING_MAX: 20
+      SKY: 1,
+      MOON: 2,
+      MOUNTAIN: 3,
+      CLOUD: 4,
+      BG_BUILDINGS: 5,
+      GROUND: 6,
+      GATE: 7,
+      BUILDING: 10,
+      CHARACTER: 30
     },
     VIEW_HEIGHT: 10,
-    BUILDING_GAP: 1000,
-    ROAD_WIDTH: 8,
+    ROAD_WIDTH: 100,
     CHARACTER: {
       WIDTH: 560,
       HEIGHT: 640,
@@ -38,9 +48,17 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         LEFT: 2
       },
     },
+    BUILDING: {
+      GAP: 1000,
+      POSITION: {
+        RIGHT: 0,
+        CENTER: 0.5,
+        LEFT: 1
+      }
+    },
     TICK_UNIT: 1,
     SCROLL: {
-      MAX: 2000,
+      MAX: 1200,
       UNIT: 100
     }
   };
@@ -127,9 +145,14 @@ VirtualBandung.Play = VirtualBandung.Play || {};
 
   const images = VirtualBandung.Play.images = {
     character: new ImageInfo('data/img/character.json'),
-    jpnField: new ImageInfo('data/img/jpn_field.jpg'),
+    ground: new ImageInfo('data/img/ground.png'),
     sky: new ImageInfo('data/img/sky.jpg'),
+    cloudA: new ImageInfo('data/img/cloud_a.png'),
+    cloudB: new ImageInfo('data/img/cloud_b.png'),
+    cloudC: new ImageInfo('data/img/cloud_c.png'),
+    moon: new ImageInfo('data/img/moon.png'),
     mountain: new ImageInfo('data/img/mountain.png'),
+    gate: new ImageInfo('data/img/gate.png'),
     tower: new ImageInfo('data/img/tower.png'),
     buildingA: new ImageInfo('data/img/building_a.png'),
     buildingB: new ImageInfo('data/img/building_b.png'),
@@ -148,14 +171,25 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       this._imageInfo = imageInfo;
       this._index = index;
       this._link = link;
-      this._leftSideFlg = index % 2 === 0;
+      this._position = index % 2 === 0 ? CONSTS.BUILDING.POSITION.LEFT : CONSTS.BUILDING.POSITION.RIGHT;
 
       const sprite = imageInfo.sprite;
-      sprite.zIndex = CONSTS.Z.BUILDING_MAX - index;
+      sprite.anchor.set(this._position, 1);
+      sprite.zIndex = CONSTS.Z.BUILDING - index;
       sprite.position.set(App);
     }
     get sprite() {
       return this._imageInfo.sprite;
+    }
+    set zIndex(_zIndex) {
+      this.sprite.zIndex = _zIndex;
+    }
+    get position() {
+      return this._position;
+    }
+    set position(_position) {
+      this._position = _position;
+      this.sprite.anchor.set(this._position, 1);
     }
     get startDistance() {
       return this._index * CONSTS.SCROLL.UNIT;
@@ -164,48 +198,121 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       return Math.max(0, App.distance - this.startDistance);
     }
     get distanceAngleTangent() {
-      const viewAngleTangent = CONSTS.BUILDING_GAP / CONSTS.VIEW_HEIGHT;
+      const viewAngleTangent = CONSTS.BUILDING.GAP / CONSTS.VIEW_HEIGHT;
       const distanceRatio = this.currentDistance / CONSTS.SCROLL.UNIT;
-      let result;
-      if (distanceRatio <= 0) {
-        result = 0;
-      } else if (distanceRatio < 1) {
-        const sqrt = Math.sqrt(1 - 4 * distanceRatio * Math.pow(viewAngleTangent, 2) * (distanceRatio - 1));
-        result = (sqrt - 1) / (2 * distanceRatio * viewAngleTangent);
+      if (distanceRatio < 1) {
+        return viewAngleTangent * distanceRatio;
       } else {
-        result = Math.pow(viewAngleTangent * distanceRatio, 2);
+        return viewAngleTangent * Math.pow(distanceRatio, 2);
       }
-      return result;
     }
     get exactScale() {
-      const viewAngleTangent = CONSTS.BUILDING_GAP / CONSTS.VIEW_HEIGHT;
+      const viewAngleTangent = CONSTS.BUILDING.GAP / CONSTS.VIEW_HEIGHT;
       return this.distanceAngleTangent / viewAngleTangent;
     }
     get scale() {
-      const smallestScale = 1 / 48;
-      return App.scale * ((1 - smallestScale) * this.exactScale + smallestScale);
+      const distance = (App.distance - this.startDistance) / CONSTS.SCROLL.UNIT;
+      let smallestScale = (1 + this.exactScale) / 6;
+      if (distance < 0) {
+        smallestScale -= Math.abs(distance / 8) / 12;
+      }
+      const peekScale = 1.1;
+      return App.scale * ((peekScale - smallestScale) * this.exactScale + smallestScale);
     }
     get x() {
       const origin = App.originX;
-      const distanceRange = App.height * (CONSTS.Y.CHARACTER - CONSTS.Y.FAR_POINT);
-      const base = CONSTS.ROAD_WIDTH / 2;
-      const tangent = base / distanceRange;
-      const delta = tangent * this.exactScale;
-      return this._leftSideFlg ? origin - delta : origin + delta;
+      const delta = CONSTS.ROAD_WIDTH * this.exactScale;
+      switch (this._position) {
+      case CONSTS.BUILDING.POSITION.LEFT:
+        return origin - delta;
+      case CONSTS.BUILDING.POSITION.RIGHT:
+        return origin + delta;
+      case CONSTS.BUILDING.POSITION.CENTER:
+      default:
+        return origin;
+      }
     }
     get y() {
       const origin = App.buildingOriginY;
       const distanceRange = App.height * (CONSTS.Y.CHARACTER - CONSTS.Y.FAR_POINT);
-      const delta = distanceRange * this.exactScale;
+      const delta = distanceRange * (
+        this.exactScale <= 1 ? this.exactScale
+        : this.position !== CONSTS.BUILDING.POSITION.CENTER ? Math.pow(this.exactScale, 2)
+        : 1 + (this.exactScale - 1) * 0.1
+      );
       return origin + delta;
     }
     updatePosition() {
       const sprite = this.sprite;
-      sprite.anchor.set(this._leftSideFlg ? 1 : 0, 1);
       sprite.position.set(this.x, this.y);
       sprite.scale.set(this.scale);
     }
   }
+
+  const Background = new class {
+    constructor() {
+      const wrapper = this._wrapper = new PIXI.Sprite();
+      wrapper.anchor.set(0.5, 1);
+      wrapper.scale.set(App.scale);
+    }
+    get wrapper() {
+      return this._wrapper;
+    }
+    setSprites() {
+      const wrapper = this.wrapper;
+      const sky = images.sky.sprite;
+      sky.anchor.set(0.5, 0);
+      sky.zIndex = CONSTS.Z.SKY;
+      wrapper.addChild(sky);
+      const moon = images.moon.sprite;
+      moon.anchor.set(0.5);
+      moon.zIndex = CONSTS.Z.MOON;
+      wrapper.addChild(moon);
+      const cloudA = images.cloudA.sprite;
+      cloudA.anchor.set(0.5);
+      cloudA.zIndex = CONSTS.Z.CLOUD;
+      wrapper.addChild(cloudA);
+      const cloudB = images.cloudB.sprite;
+      cloudB.anchor.set(0.5);
+      cloudB.zIndex = CONSTS.Z.CLOUD;
+      wrapper.addChild(cloudB);
+      const cloudC = images.cloudC.sprite;
+      cloudC.anchor.set(0.5);
+      cloudC.zIndex = CONSTS.Z.CLOUD;
+      wrapper.addChild(cloudC);
+      const mountain = images.mountain.sprite;
+      mountain.anchor.set(0.5, 1);
+      mountain.zIndex = CONSTS.Z.MOUNTAIN;
+      wrapper.addChild(mountain);
+      const ground = images.ground.sprite;
+      ground.scale.set(1.25)
+      ground.anchor.set(0.5, 1);
+      ground.zIndex = CONSTS.Z.GROUND;
+      wrapper.addChild(ground);
+    }
+    resizeWrapper() {
+      this.wrapper.position.set(App.width / 2, App.characterOriginY);
+      this.wrapper.scale.set(App.scale);
+      this.init();
+    }
+    init() {
+      const wrapper = this.wrapper;
+      wrapper.position.set(App.width / 2, App.height);
+      const sky = images.sky.sprite;
+      sky.position.set(0, - App.height / App.scale);
+      const mountain = images.mountain.sprite;
+      mountain.position.set(500, - App.height / App.scale + 450)
+      const moon = images.moon.sprite;
+      moon.position.set(500, - App.height / App.scale + 100);
+      const ground = images.ground.sprite;
+      ground.position.set(0);
+    }
+    show() {
+      this.setSprites();
+      this.init();
+      container.addChild(this.wrapper);
+    }
+  };
 
   const Character = VirtualBandung.Play.character = new class {
     constructor() {
@@ -279,23 +386,28 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     init() {
       this._buildings = [
         [images.buildingA, ''],
-        [images.buildingB, ''],
-        [images.buildingC, ''],
-        [images.buildingD, ''],
-        [images.shopA, ''],
-        [images.shopB, ''],
-        [images.shopC, ''],
-        [images.shopD, ''],
         [images.boothA, ''],
-        [images.boothB, '']
+        [images.shopA, ''],
+        [images.buildingB, ''],
+        [images.shopB, ''],
+        [images.buildingC, ''],
+        [images.shopC, ''],
+        [images.boothB, ''],
+        [images.buildingD, ''],
+        [images.shopD, '']
       ]
       .map(([imageInfo, link], index) => new Building(imageInfo, index, link));
+
+      const gate = new Building(images.gate, 10);
+      gate.position = CONSTS.BUILDING.POSITION.CENTER;
+      gate.zIndex = CONSTS.Z.GATE;
+      this._buildings.push(gate);
     }
     showAll() {
       if (this._buildings.length === 0) {
         this.init();
       }
-      this._buildings.forEach(building => {
+      this._buildings.reverse().forEach(building => {
         building.updatePosition();
         container.addChild(building.sprite);
       });
@@ -308,22 +420,15 @@ VirtualBandung.Play = VirtualBandung.Play || {};
   const ImageLoader = new class {
 
     setSprites() {
-      const field = images.sky.sprite;
-      field.zIndex = CONSTS.Z.FIELD;
-      field.anchor.set(0.5, 1);
-      container.addChild(field);
-
-      Character.show();
+      Background.show();
       Buildings.showAll();
+      Character.show();
 
       this.resizeImages();
       App.render(container);
     }
     resizeImages() {
-      const field = images.sky.sprite;
-      field.position.set(App.width / 2, App.height);
-      field.scale.set(App.scale, 1);
-
+      Background.resizeWrapper();
       Character.resizeWrapper();
       Buildings.updateAll();
     }
@@ -349,8 +454,8 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
 
     loadProgressHandler(loader, resource) {
-      console.log("loading: " + resource.url);
-      console.log("progress: " + loader.progress + "%");
+      const filePath = resource.url;
+      const totalProgress = loader.progress;
     }
 
     loadImages() {
@@ -367,10 +472,12 @@ VirtualBandung.Play = VirtualBandung.Play || {};
 
   const Event = new class {
     constructor() {
+      this._startPosition;
       this._nextPosition = 0;
       this._touching = false;
       this._lastY = 0;
       this._moving = false;
+      this._reachedEnd = false;
       this.intervalID = {
         tick: 0,
         character: 0,
@@ -392,7 +499,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       App.render();
     }
     onWheel(event) {
-      this.increment(event.deltaY / 100);
+      this.increment(event.deltaY);
       if (!this._moving) {
         this.startMoving();
       }
@@ -408,7 +515,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     onTouchMove(event) {
       const touch = event.touches[0];
       const currentY = touch.screenY;
-      this.increment((currentY - this._lastY) / 10);
+      this.increment(currentY - this._lastY);
       this._lastY = touch.screenY;
       if (!this._moving) {
         this.startMoving();
@@ -423,22 +530,32 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       }
     }
     startMove() {
+      this._startPosition = App.distance;
       this._moving = true;
       this.intervalID.tick = setInterval(() => this.tick(), 1);
       this.intervalID.character = setInterval(() => this.moveCharacter(), 100);
       this.intervalID.buildings = setInterval(() => this.moveBuildings(), 1);
-      this.intervalID.field = setInterval(() => this.moveField(), 10);
     }
     tick() {
-      if (App.distance === this.nextPosition) {
+      const delta = this.nextPosition - App.distance;
+      const deltaRatio = Math.abs(0.5 - Math.abs(delta / CONSTS.SCROLL.MAX));
+      let tick = CONSTS.TICK_UNIT * (deltaRatio < 0.1 ? 1 : Math.pow((0.5 - deltaRatio) * 10, 2));
+      tick = Math.max(tick, 0.5);
+      if (delta === 0) {
+        App.distance = this.nextPosition;
         clearInterval(this.intervalID.tick);
         this._moving = false;
-      } else if (App.distance < this.nextPosition) {
-        App.distance = parseInt(Math.min(App.distance + CONSTS.TICK_UNIT, CONSTS.SCROLL.MAX));
+      } else if (delta > 0) {
+        const distance = Math.min(App.distance + tick, CONSTS.SCROLL.MAX);
+        App.distance = (distance >= this.nextPosition) ? this.nextPosition : distance;
       } else {
-        App.distance = parseInt(Math.max(App.distance - CONSTS.TICK_UNIT, 0));
+        const distance = Math.max(App.distance - tick, 0);
+        App.distance = (distance <= this.nextPosition) ? this.nextPosition : distance;
       }
       App.render();
+      if (parseInt(App.distance) === CONSTS.SCROLL.MAX) {
+        this.onReachEnd();
+      }
     }
     moveCharacter() {
       if (!this._moving) {
@@ -446,9 +563,16 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         clearInterval(this.intervalID.character);
         return;
       }
-      if (App.distance < this.nextPosition && Character.angle !== CONSTS.CHARACTER.ANGLE.UP) {
+      const building = (App.distance / CONSTS.SCROLL.UNIT) * 10;
+      if (building > 5 && building < 105 && (building % 10 > 8 || building % 10 < 2)) {
+        if (Math.round(building / 10) % 2 === 0) {
+          Character.angle = CONSTS.CHARACTER.ANGLE.RIGHT;
+        } else {
+          Character.angle = CONSTS.CHARACTER.ANGLE.LEFT;
+        }
+      } else if (App.distance < this.nextPosition && Character.angle !== CONSTS.CHARACTER.ANGLE.UP) {
         Character.angle = CONSTS.CHARACTER.ANGLE.UP;
-      } else if (Character.angle !== CONSTS.CHARACTER.ANGLE.DOWN) {
+      } else if (App.distance > this.nextPosition && Character.angle !== CONSTS.CHARACTER.ANGLE.DOWN) {
         Character.angle = CONSTS.CHARACTER.ANGLE.DOWN;
       }
       Character.walk();
@@ -460,13 +584,19 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       }
       Buildings.updateAll();
     }
-    moveField() {
-      if (!this._moving) {
-        clearInterval(this.intervalID.field);
-        return;
-      }
-      const sky = images.sky.sprite;
-      sky.y = App.height + (sky.height - App.height) * (App.distance / CONSTS.SCROLL.MAX);
+    onReachEnd() {
+      if (this._reachedEnd) return;
+      console.log("REACH END")
+      document.getElementById(CONSTS.ELEMENT_ID.URP_LINK).click();
+      // const urpClassList = document.getElementById(CONSTS.ELEMENT_ID.URP).classList;
+      // const playAreaClassList = document.getElementById(CONSTS.ELEMENT_ID.AREA).classList;
+      // if (urpClassList.contains(CONSTS.ELEMENT_CLASS.HIDDEN)) {
+      //   urpClassList.remove(CONSTS.ELEMENT_CLASS.HIDDEN);
+      // }
+      // if (!playAreaClassList.contains(CONSTS.ELEMENT_CLASS.HIDDEN)) {
+      //   playAreaClassList.add(CONSTS.ELEMENT_CLASS.HIDDEN);
+      // }
+      this._reachedEnd = true;
     }
   };
 

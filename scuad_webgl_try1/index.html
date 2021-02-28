@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | ScuadURP</title>
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <script src="TemplateData/UnityProgress.js"></script>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        var unityInstance = UnityLoader.instantiate("unityContainer", "Build/webgl_green.json", {
+            onProgress: UnityProgress
+        });
+    </script>
+</head>
+
+<body>
+    <button class="close_button" onclick="ShowVideo()"> Turn on/off
+    </button>
+    <div class="webgl-content">
+        <figure class="top_icon">
+            <figcaption>
+                <div class="unity" id="unityContainer"></div>
+                <div class="youtubeframe">
+                    <iframe id="myIFrame" src="https://www.youtube.com/embed/6B_6K-splRU" frameborder="0"></iframe>
+                </div>
+            </figcaption>
+        </figure>
+    </div>
+    <script>
+        const myIframe = document.getElementById("myIFrame")
+
+        function ShowVideo() {
+            const iFrameWindow = myIframe.contentWindow;
+            if (myIframe.style.display == "none") {
+                myIframe.style.display = "block";
+
+            } else {
+                myIframe.style.display = "none";
+            }
+        }
+    </script>
+</body>
+
+</html>
