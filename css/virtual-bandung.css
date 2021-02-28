@@ -12,6 +12,6 @@ body {
   height: 100vh;
 }
 
-.hidden-section {
+#urls {
   display: none;
 }

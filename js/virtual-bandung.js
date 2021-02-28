@@ -16,6 +16,10 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       PNG: 1,
       JSON: 2
     },
+    SPRITE_TYPE: {
+      SPRITE: 1,
+      TILING: 2
+    },
     Y: {
       CHARACTER: 4/5,
       FAR_POINT: 2/5
@@ -60,6 +64,9 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     SCROLL: {
       MAX: 1200,
       UNIT: 100
+    },
+    FILTER: {
+      GLOW: new PIXI.filters.GlowFilter(15, 2, 1, 0xff9999, 0.5)
     }
   };
 
@@ -111,10 +118,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       return this.height * 2 / 5;
     }
     updateSize() {
-      this.view.width = this.width;
-      this.view.height = this.height;
-      this.view.style.width = `${this.width}px`;
-      this.view.style.height = `${this.height}px`;
+      this.renderer.resize(this.width, this.height);
     }
     render() {
       this.renderer.render(container);
@@ -122,8 +126,11 @@ VirtualBandung.Play = VirtualBandung.Play || {};
   };
 
   class ImageInfo {
-    constructor(_path) {
+    constructor(_path, _type=CONSTS.SPRITE_TYPE.SPRITE, _width=0, _height=0) {
       this._path = _path;
+      this._type = _type;
+      this._width = _width;
+      this._height = _height;
       this._sprites = new Map();
     }
     get path() {
@@ -134,6 +141,18 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     set sprite(_sprite) {
       this.setSprite(0, _sprite);
+    }
+    setTexture(_texture) {
+      this._texture = _texture;
+      switch (this._type) {
+      case CONSTS.SPRITE_TYPE.TILING:
+        this.sprite = new PIXI.TilingSprite(_texture, this._width, this._height);
+        break;
+      case CONSTS.SPRITE_TYPE.SPRITE:
+      default:
+        this.sprite = new PIXI.Sprite(_texture);
+        break;
+      }
     }
     getSprite(key = 0) {
       return this._sprites.get(key);
@@ -146,7 +165,9 @@ VirtualBandung.Play = VirtualBandung.Play || {};
   const images = VirtualBandung.Play.images = {
     character: new ImageInfo('data/img/character.json'),
     ground: new ImageInfo('data/img/ground.png'),
-    sky: new ImageInfo('data/img/sky.jpg'),
+    groundMask: new ImageInfo('data/img/ground_mask.jpg'),
+    groundGrad: new ImageInfo('data/img/ground_grad.jpg'),
+    sky: new ImageInfo('data/img/sky.jpg', CONSTS.SPRITE_TYPE.TILING, 3000, 500),
     cloudA: new ImageInfo('data/img/cloud_a.png'),
     cloudB: new ImageInfo('data/img/cloud_b.png'),
     cloudC: new ImageInfo('data/img/cloud_c.png'),
@@ -177,6 +198,8 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       sprite.anchor.set(this._position, 1);
       sprite.zIndex = CONSTS.Z.BUILDING - index;
       sprite.position.set(App);
+      sprite.on('pointerover', () => this.onPointerOver(sprite))
+      .on('pointerout', () => this.onPointerOut(sprite));
     }
     get sprite() {
       return this._imageInfo.sprite;
@@ -242,10 +265,18 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       );
       return origin + delta;
     }
+    updateFilters() {
+      if (this.exactScale > 0.9 && this.exactScale < 1.1) {
+        this.sprite.filters = [CONSTS.FILTER.GLOW];
+      } else {
+        this.sprite.filters = [];
+      }
+    }
     updatePosition() {
       const sprite = this.sprite;
       sprite.position.set(this.x, this.y);
       sprite.scale.set(this.scale);
+      this.updateFilters();
     }
   }
 
@@ -284,11 +315,14 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       mountain.anchor.set(0.5, 1);
       mountain.zIndex = CONSTS.Z.MOUNTAIN;
       wrapper.addChild(mountain);
-      const ground = images.ground.sprite;
-      ground.scale.set(1.25)
-      ground.anchor.set(0.5, 1);
-      ground.zIndex = CONSTS.Z.GROUND;
+      const ground = images.groundGrad.sprite;
+      ground.scale.set(2);
+      ground.anchor.set(0.5);
       wrapper.addChild(ground);
+      const groundMask = images.groundMask.sprite;
+      groundMask.anchor.set(0.5, 1);
+      ground.mask = groundMask;
+      wrapper.addChild(groundMask);
     }
     resizeWrapper() {
       this.wrapper.position.set(App.width / 2, App.characterOriginY);
@@ -298,14 +332,53 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     init() {
       const wrapper = this.wrapper;
       wrapper.position.set(App.width / 2, App.height);
+      const width = App.width / App.scale;
+      const height = App.height / App.scale;
       const sky = images.sky.sprite;
-      sky.position.set(0, - App.height / App.scale);
+      sky.position.set(0, - height);
       const mountain = images.mountain.sprite;
-      mountain.position.set(500, - App.height / App.scale + 450)
+      mountain.position.set(width / 4, - height * 0.6)
+      this.moveMoon();
+      const ground = images.groundGrad.sprite;
+      ground.position.set(0, - height * 0.6);
+      const groundMask = images.groundMask.sprite;
+      groundMask.position.set(0);
+      groundMask.scale.set(width / 1980, height / 654 * 0.75);
+    }
+    moveSky() {
+      images.sky.sprite.tilePosition.x += 0.2;
+      App.render();
+    }
+    moveMoon() {
       const moon = images.moon.sprite;
-      moon.position.set(500, - App.height / App.scale + 100);
-      const ground = images.ground.sprite;
-      ground.position.set(0);
+      const width = App.width / App.scale;
+      const height = App.height / App.scale;
+      const radius = width / 2 * 1.2;
+      const topY = - height * 0.95;
+      const bottomY = - height * 0.6;
+      const originX = 0;
+      const originY = topY + radius;
+      const speedUnit = Math.PI / 4000;
+      const {x: currX} = moon;
+      const currAngle = Math.acos(currX / radius);
+      let nextAngle = currAngle - speedUnit;
+      let nextX = originX + radius * Math.cos(nextAngle);
+      let nextY = originY - radius * Math.sin(nextAngle);
+      if (nextY > bottomY) {
+        nextX = - width / 2;
+      }
+      moon.position.set(nextX, nextY);
+      App.render();
+    }
+    moveGround() {
+      const ground = images.groundGrad.sprite;
+      ground.rotation += 0.1;
+    }
+    tick(ticker) {
+      if (ticker % 5 === 0) {
+        this.moveMoon();
+        this.moveSky();
+      }
     }
     show() {
       this.setSprites();
@@ -441,7 +514,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
           textures = resource.textures;
 
           if (!textures) {
-            images[imageKey].sprite = new PIXI.Sprite(resource.texture);
+            images[imageKey].setTexture(resource.texture);
           } else {
             Object.entries(textures).forEach(([textureKey, texture]) => {
               images[imageKey].setSprite(parseInt(textureKey), new PIXI.Sprite(texture));
@@ -465,18 +538,21 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         loader.add(imageKey, imageInfo.path);
       });
 
-      loader.onProgress.add((_loader, _resource) => this.loadProgressHandler(_loader, _resource));
       loader.load((_loader, _resources) => this.onLoadImages(_resources));
+      loader.onProgress.add((_loader, _resource) => this.loadProgressHandler(_loader, _resource));
+      loader.onComplete.add(() => Ticker.start());
     }
   };
 
   const Event = new class {
     constructor() {
+      this._playable = false;
       this._startPosition;
       this._nextPosition = 0;
       this._touching = false;
       this._lastY = 0;
       this._moving = false;
+      this._walking = false;
       this._reachedEnd = false;
       this.intervalID = {
         tick: 0,
@@ -484,6 +560,12 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         buildings: 0,
         road: 0
       };
+    }
+    get playable() {
+      return this._playable;
+    }
+    set playable(_playable) {
+      this._playable = _playable;
     }
     get nextPosition() {
       return parseInt(this._nextPosition);
@@ -493,18 +575,27 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       newPosition = Math.max(newPosition, 0)
       this._nextPosition = newPosition;
     }
+    roundPosition() {
+      this._nextPosition = Math.min(Math.ceil(this._nextPosition / 100) * 100, CONSTS.SCROLL.MAX);
+    }
     onResize() {
       App.updateSize();
       ImageLoader.resizeImages();
       App.render();
     }
     onWheel(event) {
-      this.increment(event.deltaY);
+      if (!this.playable) return;
+      if (event.deltaY > 0) {
+        this.increment(100);
+      } else {
+        this.increment(-100);
+      }
       if (!this._moving) {
         this.startMoving();
       }
     }
     onTouchStart(event) {
+      if (!this.playable) return;
       const touch = event.touches[0];
       this._touching = true;
       this._lastY = touch.screenY;
@@ -513,6 +604,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       }
     }
     onTouchMove(event) {
+      if (!this.playable) return;
       const touch = event.touches[0];
       const currentY = touch.screenY;
       this.increment(currentY - this._lastY);
@@ -522,7 +614,9 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       }
     }
     onTouchEnd(event) {
+      if (!this.playable) return;
       this._touching = false;
+      this.roundPosition();
     }
     startMoving() {
       if (!this._moving) {
@@ -532,24 +626,30 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     startMove() {
       this._startPosition = App.distance;
       this._moving = true;
-      this.intervalID.tick = setInterval(() => this.tick(), 1);
-      this.intervalID.character = setInterval(() => this.moveCharacter(), 100);
-      this.intervalID.buildings = setInterval(() => this.moveBuildings(), 1);
+      this._walking = true;
     }
-    tick() {
+    tick(ticker) {
+      if (this._walking) {
+        if (ticker % 20 === 0) this.moveCharacter();
+      }
+      if (this._moving) {
+        this.move();
+        this.moveBuildings();
+      }
+    }
+    move() {
       const delta = this.nextPosition - App.distance;
       const deltaRatio = Math.abs(0.5 - Math.abs(delta / CONSTS.SCROLL.MAX));
-      let tick = CONSTS.TICK_UNIT * (deltaRatio < 0.1 ? 1 : Math.pow((0.5 - deltaRatio) * 10, 2));
-      tick = Math.max(tick, 0.5);
+      let unit = CONSTS.TICK_UNIT * (deltaRatio < 0.1 ? 1 : Math.pow((0.5 - deltaRatio) * 10, 2));
+      unit = Math.max(unit, 0.5);
       if (delta === 0) {
         App.distance = this.nextPosition;
-        clearInterval(this.intervalID.tick);
         this._moving = false;
       } else if (delta > 0) {
-        const distance = Math.min(App.distance + tick, CONSTS.SCROLL.MAX);
+        const distance = Math.min(App.distance + unit, CONSTS.SCROLL.MAX);
         App.distance = (distance >= this.nextPosition) ? this.nextPosition : distance;
       } else {
-        const distance = Math.max(App.distance - tick, 0);
+        const distance = Math.max(App.distance - unit, 0);
         App.distance = (distance <= this.nextPosition) ? this.nextPosition : distance;
       }
       App.render();
@@ -560,7 +660,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     moveCharacter() {
       if (!this._moving) {
         Character.stop();
-        clearInterval(this.intervalID.character);
+        this._walking = false;
         return;
       }
       const building = (App.distance / CONSTS.SCROLL.UNIT) * 10;
@@ -578,27 +678,30 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       Character.walk();
     }
     moveBuildings() {
-      if (!this._moving) {
-        clearInterval(this.intervalID.buildings);
-        return;
-      }
       Buildings.updateAll();
     }
     onReachEnd() {
       if (this._reachedEnd) return;
-      console.log("REACH END")
       document.getElementById(CONSTS.ELEMENT_ID.URP_LINK).click();
-      // const urpClassList = document.getElementById(CONSTS.ELEMENT_ID.URP).classList;
-      // const playAreaClassList = document.getElementById(CONSTS.ELEMENT_ID.AREA).classList;
-      // if (urpClassList.contains(CONSTS.ELEMENT_CLASS.HIDDEN)) {
-      //   urpClassList.remove(CONSTS.ELEMENT_CLASS.HIDDEN);
-      // }
-      // if (!playAreaClassList.contains(CONSTS.ELEMENT_CLASS.HIDDEN)) {
-      //   playAreaClassList.add(CONSTS.ELEMENT_CLASS.HIDDEN);
-      // }
       this._reachedEnd = true;
     }
   };
+
+  const Ticker = new class {
+    constructor() {
+      this._tick = 0;
+      this._intervalID = 0;
+    }
+    ticker() {
+      Event.tick(this._tick);
+      Background.tick(this._tick);
+      this._tick++;
+    }
+    start() {
+      if (this._intervalID > 0) return;
+      this._intervalID = setInterval(() => this.ticker(), 5);
+    }
+  }
 
   const AppCreator = new class {
     createApp() {
@@ -616,7 +719,11 @@ VirtualBandung.Play = VirtualBandung.Play || {};
   VirtualBandung.Play.init = function() {
     AppCreator.createApp();
     ImageLoader.loadImages();
-  }
+  };
+
+  VirtualBandung.Play.start = function() {
+    Event.playable = true;
+  };
 
   {
     VirtualBandung.Play.init();

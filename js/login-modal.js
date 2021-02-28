@@ -189,6 +189,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
               VirtualBandung.Login.msg = '';
               const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
               CommonUtil.fade(loginArea, 500, CONSTS.FADE_MODE.OUT);
+              VirtualBandung.Play.start();
               break;
             case CONSTS.RESULT_CODE.NG:
             default:
@@ -242,6 +243,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
     } else {
       const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
       loginArea.style.display = 'none';
+      VirtualBandung.Play.start();
     }
   }
 })(this);
