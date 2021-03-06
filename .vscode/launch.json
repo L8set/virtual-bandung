@@ -10,6 +10,20 @@
             "request": "launch",
             "file": "${workspaceFolder}/index.html",
             "runtimeArgs": ["--disable-web-security"]
+        },
+        {
+            "name": "Launch Firefox against localhost",
+            "type": "firefox",
+            "request": "launch",
+            "file": "${workspaceFolder}/index.html"
+        },
+        {
+            "name": "Launch Microsoft Edge (Chromium) Canary against localhost",
+            "type": "edge",
+            "version": "canary",
+            "request": "launch",
+            "file": "${workspaceFolder}/index.html",
+            "runtimeArgs": ["--disable-web-security"]
         }
     ]
 }
