@@ -12,6 +12,13 @@
             "runtimeArgs": ["--disable-web-security"]
         },
         {
+            "name": "Test SCUAD-ID",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/_scuad-id/index.html",
+            "runtimeArgs": ["--disable-web-security"]
+        },
+        {
             "name": "Launch Firefox against localhost",
             "type": "firefox",
             "request": "launch",

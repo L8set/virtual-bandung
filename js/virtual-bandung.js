@@ -22,7 +22,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     },
     Y: {
       CHARACTER: 4/5,
-      FAR_POINT: 2/5
+      FAR_POINT: 1/2
     },
     Z: {
       SKY: 1,
@@ -53,7 +53,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       },
     },
     BUILDING: {
-      GAP: 1000,
+      GAP: 100,
       POSITION: {
         RIGHT: 0,
         CENTER: 0.5,
@@ -112,10 +112,10 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       return this.width / 2;
     }
     get characterOriginY() {
-      return this.height * 4 / 5;
+      return this.height * CONSTS.Y.CHARACTER;
     }
     get buildingOriginY() {
-      return this.height * 2 / 5;
+      return this.height * CONSTS.Y.FAR_POINT;
     }
     updateSize() {
       this.renderer.resize(this.width, this.height);
@@ -235,16 +235,16 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     get scale() {
       const distance = (App.distance - this.startDistance) / CONSTS.SCROLL.UNIT;
-      let smallestScale = (1 + this.exactScale) / 6;
+      let smallestScale = (1 + this.exactScale) / 3;
       if (distance < 0) {
-        smallestScale -= Math.abs(distance / 8) / 12;
+        smallestScale -= Math.abs(distance / 8) / 6;
       }
       const peekScale = 1.1;
       return App.scale * ((peekScale - smallestScale) * this.exactScale + smallestScale);
     }
     get x() {
       const origin = App.originX;
-      const delta = CONSTS.ROAD_WIDTH * this.exactScale;
+      const delta = 40 * App.scale + CONSTS.ROAD_WIDTH * this.exactScale;
       switch (this._position) {
       case CONSTS.BUILDING.POSITION.LEFT:
         return origin - delta;
@@ -256,7 +256,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       }
     }
     get y() {
-      const origin = App.buildingOriginY;
+      const origin = App.buildingOriginY - this._index;
       const distanceRange = App.height * (CONSTS.Y.CHARACTER - CONSTS.Y.FAR_POINT);
       const delta = distanceRange * (
         this.exactScale <= 1 ? this.exactScale
@@ -294,6 +294,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       const sky = images.sky.sprite;
       sky.anchor.set(0.5, 0);
       sky.zIndex = CONSTS.Z.SKY;
+      sky.scale.set(1.5)
       wrapper.addChild(sky);
       const moon = images.moon.sprite;
       moon.anchor.set(0.5);
@@ -313,6 +314,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       wrapper.addChild(cloudC);
       const mountain = images.mountain.sprite;
       mountain.anchor.set(0.5, 1);
+      mountain.scale.set(3, 2)
       mountain.zIndex = CONSTS.Z.MOUNTAIN;
       wrapper.addChild(mountain);
       const ground = images.groundGrad.sprite;
@@ -337,13 +339,13 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       const sky = images.sky.sprite;
       sky.position.set(0, - height);
       const mountain = images.mountain.sprite;
-      mountain.position.set(width / 4, - height * 0.6)
+      mountain.position.set(width / 4, - height * 0.4)
       this.moveMoon();
       const ground = images.groundGrad.sprite;
       ground.position.set(0, - height * 0.6);
       const groundMask = images.groundMask.sprite;
       groundMask.position.set(0);
-      groundMask.scale.set(width / 1980, height / 654 * 0.75);
+      groundMask.scale.set(width / 1980, height / 654 * 0.65);
     }
     moveSky() {
       images.sky.sprite.tilePosition.x += 0.2;
@@ -487,60 +489,6 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     updateAll() {
       this._buildings.forEach(building => building.updatePosition());
-    }
-  };
-
-  const ImageLoader = new class {
-
-    setSprites() {
-      Background.show();
-      Buildings.showAll();
-      Character.show();
-
-      this.resizeImages();
-      App.render(container);
-    }
-    resizeImages() {
-      Background.resizeWrapper();
-      Character.resizeWrapper();
-      Buildings.updateAll();
-    }
-    onLoadImages(resources) {
-      let textures;
-
-      Object.entries(resources).forEach(([imageKey, resource]) => {
-
-        if (images.hasOwnProperty(imageKey)) {
-          textures = resource.textures;
-
-          if (!textures) {
-            images[imageKey].setTexture(resource.texture);
-          } else {
-            Object.entries(textures).forEach(([textureKey, texture]) => {
-              images[imageKey].setSprite(parseInt(textureKey), new PIXI.Sprite(texture));
-            });
-          }
-        }
-      });
-
-      this.setSprites();
-    }
-
-    loadProgressHandler(loader, resource) {
-      const filePath = resource.url;
-      const totalProgress = loader.progress;
-    }
-
-    loadImages() {
-      const loader = PIXI.Loader.shared;
-
-      Object.entries(images).forEach(([imageKey, imageInfo]) => {
-        loader.add(imageKey, imageInfo.path);
-      });
-
-      loader.load((_loader, _resources) => this.onLoadImages(_resources));
-      loader.onProgress.add((_loader, _resource) => this.loadProgressHandler(_loader, _resource));
-      loader.onComplete.add(() => Ticker.start());
     }
   };
 
@@ -716,8 +664,66 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
   };
 
+  const ImageLoader = new class {
+
+    setSprites() {
+      Background.show();
+      Buildings.showAll();
+      Character.show();
+
+      this.resizeImages();
+      App.render(container);
+    }
+    resizeImages() {
+      Background.resizeWrapper();
+      Character.resizeWrapper();
+      Buildings.updateAll();
+    }
+    onLoadImages(resources) {
+      let textures;
+
+      Object.entries(resources).forEach(([imageKey, resource]) => {
+
+        if (images.hasOwnProperty(imageKey)) {
+          textures = resource.textures;
+
+          if (!textures) {
+            images[imageKey].setTexture(resource.texture);
+          } else {
+            Object.entries(textures).forEach(([textureKey, texture]) => {
+              images[imageKey].setSprite(parseInt(textureKey), new PIXI.Sprite(texture));
+            });
+          }
+        }
+      });
+    }
+
+    loadProgressHandler(loader, resource) {
+      const filePath = resource.url;
+      const totalProgress = loader.progress;
+    }
+
+    loadCompleteHandler(loader, resource) {
+      if (loader.progress < 100) return;
+      this.setSprites();
+      AppCreator.createApp();
+      Ticker.start();
+    }
+
+    loadImages() {
+      const loader = PIXI.Loader.shared;
+
+      Object.entries(images).forEach(([imageKey, imageInfo]) => {
+        loader.add(imageKey, imageInfo.path);
+      });
+
+      loader.load((_loader, _resources) => this.onLoadImages(_resources));
+      loader.onProgress.add((_loader, _resource) => this.loadProgressHandler(_loader, _resource));
+      loader.onComplete.add((_loader, _resource) => this.loadCompleteHandler(_loader, _resource));
+    }
+  };
+
   VirtualBandung.Play.init = function() {
-    AppCreator.createApp();
     ImageLoader.loadImages();
   };
 
