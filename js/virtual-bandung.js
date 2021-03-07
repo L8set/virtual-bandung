@@ -64,6 +64,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       GLOW_WHITE: new PIXI.filters.GlowFilter(15, 2, 1, 0xff9999, 0.5),
       GLOW_PINK: new PIXI.filters.GlowFilter(15, 2, 1, 0xf796b3, 0.5),
       GLOW_BLUE: new PIXI.filters.GlowFilter(20, 20, 1, 0x525cff, 0.5),
+      GLOW_GATE: new PIXI.filters.GlowFilter(500, 500, 500, 0x525cff),
       TWINKLE: new PIXI.filters.GlowFilter(10, 2, 1),
       BLUR_1: new PIXI.filters.BlurFilter(0.5, 2),
       BLUR_2: new PIXI.filters.BlurFilter(1, 2)
@@ -167,6 +168,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     moon: new ImageInfo('data/img/moon.png'),
     mountain: new ImageInfo('data/img/mountain.png'),
     gate: new ImageInfo('data/img/gate_a.png'),
+    gateSign: new ImageInfo('data/img/gate_sign.png'),
     cityA: new ImageInfo('data/img/city_a.png'),
     cityB: new ImageInfo('data/img/city_b.png'),
     cityC: new ImageInfo('data/img/city_c.png'),
@@ -237,10 +239,19 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       }
     }
     updateFilters() {
-      if (this.exactScale > 0.9 && this.exactScale < 1.1) {
-        this.sprite.filters = [CONSTS.FILTER.GLOW_WHITE];
+      if (this.xIndex === 0) {
+        this.sprite.filters = [CONSTS.FILTER.GLOW_GATE, CONSTS.FILTER.GLOW_GATE];
+        images.gateSign.sprite.visible = false;
       } else {
         this.sprite.filters = [];
+      }
+      this.sprite.interactive = false;
+      if (this.scale > 0.9 && this.scale < 1.1) {
+        this.sprite.filters.push(CONSTS.FILTER.GLOW_WHITE);
+        this.sprite.interactive = true;
+        if (this.xIndex === 0) {
+          images.gateSign.sprite.visible = true;
+        }
       }
     }
     updatePosition() {
@@ -253,6 +264,18 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       sprite.position.set(this.screenX, this.screenY);
       sprite.scale.set(this.scale);
       this.updateFilters();
+    }
+    tick(ticker) {
+      const countUnit = 30;
+      const expandRatio = 0.1;
+      const count = ticker % countUnit;
+      if (count < countUnit / 2) {
+        const ratio = 1 + expandRatio * count / (countUnit / 2);
+        this.sprite.scale.set(this.scale * ratio, this.scale / ratio);
+      } else {
+        const ratio = 1 + expandRatio - expandRatio * (count - countUnit / 2) / (countUnit / 2);
+        this.sprite.scale.set(this.scale * ratio, this.scale / ratio);
+      }
     }
   }
 
@@ -482,6 +505,10 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         [images.gate, 0, null, null]
       ].map(([imageInfo, x, link, message], index) => new Building(imageInfo, x, index + 1, link, message));
       Building.count = this._buildings.length;
+      const gateSign = images.gateSign.sprite;
+      gateSign.anchor.set(0.5, 1);
+      gateSign.position.set(0, -App.height * 0.5);
+      images.gate.sprite.addChild(gateSign);
     }
     showAll() {
       if (this._buildings.length === 0) {
@@ -494,6 +521,9 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     updateAll() {
       this._buildings.forEach(building => building.updatePosition());
+    }
+    tick(ticker) {
+      this._buildings.forEach(building => building.tick(ticker));
     }
   };
 
@@ -513,6 +543,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         buildings: 0,
         road: 0
       };
+      this.goInner = true;
     }
     get playable() {
       return this._playable;
@@ -583,7 +614,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     tick(ticker) {
       if (this._walking) {
-        if (ticker % 10 === 0) this.moveCharacter();
+        if (ticker % 3 === 0) this.moveCharacter();
       }
       if (this._moving) {
         this.moveViewPoint();
@@ -616,6 +647,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         return _currentPosition;
       })();
       App.currentPosition = currentPosition;
+      this.goInner = deltaPosition >= 0;
       if (positionDistance === 0) {
         this._moving = false;
       }
@@ -643,16 +675,27 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         frontXIndex = frontBuilding.xIndex;
         frontZIndex = frontBuilding.zIndex;
       }
-      if (nextIndex < Buildings.maxZIndex) {
+      if (nextIndex < Buildings._buildings.length) {
         const backBuilding = Buildings._buildings[nextIndex];
         backXIndex = backBuilding.xIndex;
         backZIndex = backBuilding.zIndex;
       } else {
         backXIndex = 0;
-        backZIndex = Buildings._buildings.length;
+        backZIndex = Buildings.maxZIndex;
       }
       App.positionX = (frontXIndex + (backXIndex - frontXIndex) * nextRatio) * CONSTS.X.UNIT;
       App.positionZ = (frontZIndex + (backZIndex - frontZIndex) * nextRatio) * CONSTS.Z.UNIT;
+      if (nextRatio === 1 || nextRatio === 0) {
+        Character.angle = CONSTS.CHARACTER.ANGLE.DOWN;
+      } else if ((backXIndex > frontXIndex && this.goInner) || (backXIndex < frontXIndex && !this.goInner)) {
+        Character.angle = CONSTS.CHARACTER.ANGLE.RIGHT;
+      } else if ((backXIndex > frontXIndex && !this.goInner) || (backXIndex < frontXIndex && this.goInner)) {
+        Character.angle = CONSTS.CHARACTER.ANGLE.LEFT;
+      } else if (this.goInner) {
+        Character.angle = CONSTS.CHARACTER.ANGLE.UP;
+      } else {
+        Character.angle = CONSTS.CHARACTER.ANGLE.DOWN;
+      }
     }
     moveCharacter() {
       if (!this._moving) {
@@ -660,18 +703,6 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         this._walking = false;
         return;
       }
-      // const building = (App.distance / CONSTS.SCROLL.UNIT) * 10;
-      // if (building > 5 && building < 105 && (building % 10 > 8 || building % 10 < 2)) {
-      //   if (Math.round(building / 10) % 2 === 0) {
-      //     Character.angle = CONSTS.CHARACTER.ANGLE.RIGHT;
-      //   } else {
-      //     Character.angle = CONSTS.CHARACTER.ANGLE.LEFT;
-      //   }
-      // } else if (App.distance < this.nextPosition && Character.angle !== CONSTS.CHARACTER.ANGLE.UP) {
-      //   Character.angle = CONSTS.CHARACTER.ANGLE.UP;
-      // } else if (App.distance > this.nextPosition && Character.angle !== CONSTS.CHARACTER.ANGLE.DOWN) {
-      //   Character.angle = CONSTS.CHARACTER.ANGLE.DOWN;
-      // }
       Character.walk();
     }
     moveBuildings() {
@@ -696,6 +727,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     tick() {
       Event.tick(this._tick);
       Background.tick(this._tick);
+      Buildings.tick(this._tick);
       this._tick++;
       App.render();
     }
