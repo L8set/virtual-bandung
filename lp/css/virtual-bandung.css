@@ -1,0 +1,137 @@
+@font-face {
+  font-family: Regular;
+  src: url('../font/Poppins-Regular.ttf');
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: Medium;
+  src: url('../font/pcsenior.ttf');
+  font-weight: bolder;
+}
+
+@font-face {
+  font-family: SemiBold;
+  src: url('../font/Poppins-SemiBold.ttf');
+  font-weight: bolder;
+}
+
+@font-face {
+  font-family: Bold;
+  src: url('../font/pcsenior.ttf');
+  font-weight: bold;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background-color: #1e0058;
+}
+
+.transparent {
+  opacity: 0;
+}
+
+#playArea {
+  z-index: 10;
+  position: fixed;
+}
+
+.play-wrapper {
+  width: 100vw;
+  height: 100vh;
+}
+
+#urls {
+  display: none;
+}
+
+#loadingArea {
+  position: absolute;
+}
+
+#loadingWrapper {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#progress {
+  position: absolute;
+  top: 80%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: 60%;
+}
+
+#loading {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 100%;
+  opacity: 0.8;
+  z-index: 2;
+}
+
+.hidden {
+  display: none;
+}
+
+.icon-scroll, .icon-scroll:before {
+  position: absolute;
+  left: 50%;
+}
+
+.icon-scroll {
+  width: 40px;
+  height: 70px;
+  margin-left: -20px;
+  top: 70%;
+  margin-top: -35px;
+  box-shadow: inset 0 0 0 1px #fff;
+  border-radius: 25px;
+}
+
+.icon-scroll:before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  margin-left: -4px;
+  top: 8px;
+  border-radius: 4px;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-name: scroll;
+}
+
+.fadein {
+  animation-name: fader;
+  animation-duration: 2s;
+}
+
+@keyframes scroll {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(46px);
+  }
+}
+
+@keyframes fader {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

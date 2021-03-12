@@ -21,7 +21,9 @@ VirtualBandung.Login = VirtualBandung.Login || {};
         BIRTHPLACE: 'birthplaceMsg',
         RESIDENCE: 'residenceMsg',
         SEX: 'sexMsg'
-      }
+      },
+      LP_LINK: 'lp',
+      OPEN_FLG: 'openFlg'
     },
     ELEMENT_NAME: {
       FORM_INPUT: 'formInput'
@@ -48,10 +50,16 @@ VirtualBandung.Login = VirtualBandung.Login || {};
     SESSION_KEY: {
       ID: 'virtual_bandung_login_id'
     },
+    TEST_KEY: '//test',
     URL: 'https://script.google.com/macros/s/AKfycbwm5_I8b8DG3Q4Og0qHBOBr3jpefDI7ri4VR_oxtvvqcI5nm3fbnMtxoQ/exec',
     AGE_MAP: new Map([['1', '～15'], ['2', '16～20'], ['3', '21～25'], ['4', '26～30'], ['5', '31～40'], ['6', '41～50'], ['7', '51～']]),
     COUNTRY_SET: new Set(["Japan", "Indonesia", "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burma", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Costa Rica", "Côte d’Ivoire", "Croatia", "Cuba", "Cyprus", "Czechia", "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Holy See", "Honduras", "Hungary", "Iceland", "India", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Republic of the Congo", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "São Tomé and Príncipe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "Uruguay", "Uzbekistan", "Vanuatu", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"]),
     SEX_MAP: new Map([['1', 'Male'], ['2', 'Female'], ['3', 'Other']])
+  };
+
+  const OPEN_FLGS = {
+    CHALLENGE: 'challenge',
+    STARTED: 'started'
   };
 
   const mailAddressPattern = new RegExp(/^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.)+[a-zA-Z]{2,}$/);
@@ -168,7 +176,15 @@ VirtualBandung.Login = VirtualBandung.Login || {};
       ].every(result => result);
     }
 
+    checkMode() {
+      const mailElement = document.getElementById(CONSTS.ELEMENT_ID.EMAIL);
+      if (mailElement.value.endsWith(CONSTS.TEST_KEY)) {
+        document.getElementById(CONSTS.ELEMENT_ID.LP_LINK).click();
+      }
+    }
+
     sendForm() {
+      this.checkMode();
       if (!this.checkInput()) return false;
 
       const queryParams = Array.from(document.getElementsByName(CONSTS.ELEMENT_NAME.FORM_INPUT))
@@ -178,7 +194,6 @@ VirtualBandung.Login = VirtualBandung.Login || {};
           return params;
         }, new URLSearchParams());
 
-      console.log(queryParams)
       fetch(`${CONSTS.URL}?${queryParams}`)
         .then(response => { console.log(response); return response.json() })
         .then(response => {
@@ -187,9 +202,13 @@ VirtualBandung.Login = VirtualBandung.Login || {};
               VirtualBandung.Login.id = response.id;
               window.sessionStorage.setItem([CONSTS.SESSION_KEY.ID], [VirtualBandung.Login.id])
               VirtualBandung.Login.msg = '';
-              const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
-              CommonUtil.fade(loginArea, 500, CONSTS.FADE_MODE.OUT);
-              showMessage();
+              if (document.getElementById(CONSTS.ELEMENT_ID.OPEN_FLG).value === OPEN_FLGS.CHALLENGE) {
+                const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
+                CommonUtil.fade(loginArea, 500, CONSTS.FADE_MODE.OUT);
+                showMessage();
+              } else {
+                document.getElementById(CONSTS.ELEMENT_ID.EMAIL).click();
+              }
               break;
             case CONSTS.RESULT_CODE.NG:
             default:
@@ -219,6 +238,8 @@ VirtualBandung.Login = VirtualBandung.Login || {};
   };
 
   function showMessage() {
+    const loginMessageOk = document.getElementById('loginMessageOk');
+    loginMessageOk.addEventListener('click', () => closeLoginMessage())
     const messageArea = document.getElementById('challengeMessage');
     const id = setInterval(() => {
       messageArea.style.opacity = String((parseFloat(messageArea.style.opacity) || 0) + 0.01);
@@ -227,6 +248,13 @@ VirtualBandung.Login = VirtualBandung.Login || {};
         clearInterval(id);
       }
     }, 16);
+  }
+
+  function closeLoginMessage() {
+    const loginMessage = document.getElementById('loginMessage');
+    if (!loginMessage.classList.contains(CONSTS.CSS_CLASS.HIDDEN)) {
+      loginMessage.classList.add(CONSTS.CSS_CLASS.HIDDEN);
+    }
   }
 
   function init() {
@@ -248,13 +276,13 @@ VirtualBandung.Login = VirtualBandung.Login || {};
 
   {
     VirtualBandung.Login.id = window.sessionStorage.getItem([CONSTS.SESSION_KEY.ID]);
-    if (!VirtualBandung.Login.id) {
-      init();
-      ContentsCreator.createSignUpContents();
-    } else {
-      const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
-      loginArea.style.display = 'none';
-      showMessage();
-    }
+    // if (!VirtualBandung.Login.id) {
+    init();
+    ContentsCreator.createSignUpContents();
+    // } else {
+    //   const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
+    //   loginArea.style.display = 'none';
+    //   showMessage();
+    // }
   }
 })(this);

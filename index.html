@@ -6,17 +6,15 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="css/login-modal.css?version=2021030700">
-    <link rel="stylesheet" href="css/virtual-bandung.css?version=2021030700">
-    <title>Virtual Bandung</title>
+    <link rel="stylesheet" href="css/login.css?version=2021031100">
+    <title>Virtual Bandung - Entrance</title>
   </head>
   <body>
     <section id="loginArea" class="login-area">
-      <div id="loginBg" class="login-bg"></div>
-
       <div class="login-wrapper">
         <div class="login-contents">
-          <h1 class="login-contents__head">Login</h1>
+          <h1 class="login-contents__head">ENTER</h1>
+          <h2 class="login-contents__head">with Compute/Tablet</h2>
 
           <div id="form" class="login-contents__form">
             <div class="login-contents__field">
@@ -64,27 +62,73 @@
             </div>
 
             <div id="msg" class="login-contents__message"></div>
+            <div class="login-contents__hint">Chrome/Firefox/Edge or Safari</div>
             <div class="login-contents__form-button">
-              <button type="button" name="enterBtn" id="enterBtn" class="login-contents__button">ENTER</button>
+              <button type="button" name="enterBtn" id="enterBtn" class="login-contents__button">Go!</button>
             </div>
           </div>
         </div>
       </div>
+      <div class="login-wrapper">
+        <div class="login-contents">
+          <h1 class="login-contents__head">WATCH</h1>
+          <h2 class="login-contents__head">from mobile</h2>
+          <div class="login-contents__hint">Chrome/Firefox/Edge or Safari</div>
+          <div class="login-contents__form-button">
+            <button type="button" id="watchBtn" class="login-contents__button" onclick="location.href='watch/index.html?version=2021031100'">Go!</button>
+          </div>
+        </div>
+      </div>
     </section>
-
-    <section id="playArea" class="play-area">
-      <div id="playWrapper" class="play-wrapper">
+    <section id="challengeArea">
+      <div id="challengeMessage">
+        <div id="loginMessage">
+          <h3>You are checked in!!!　See you on 13th or try #mySCUAD challenge!</h3>
+          <input id="loginMessageOk" type="button" value="OK">
+        </div>
+        <div id="messageHead">
+          <h1>#mySCUAD Challenge!</h1>
+          <p>"Mainkan kreativitasmu dan menangkan tiket pesawat ke Jepang!"</p>
+        </div>
+        <div id="messageMain">
+          <figure id="challengeVideo">
+            <video src="data/gedung_2.mp4" width="640" loop controls>Your browser doesn't support HTML5 video tag.</video>
+          </figure>
+          <div id="messageBody">
+            <ol>
+              <li>
+                <p>Putar video dan ambil screenshot dari video tersebut atau Unduh video</p>
+              </li>
+              <li>
+                <p>Dekorasikan the screenshot/video seperti yang Anda impikan!</p>
+              </li>
+              <li>
+                <p>Follow ig <a href="https://www.instagram.com/worldscuad/">@worldscuad</a> dan <a href="https://www.instagram.com/ppikanto/">@ppikanto</a></p>
+              </li>
+              <li>
+                <p>Upload di IG story 11 Maret 14:00 – 13 Maret 14:00 (WIB) Anda dengan hashtag #mySCUAD dan tag <a href="https://www.instagram.com/worldscuad/">@worldscuad</a>, <a href="https://www.instagram.com/ppikanto/">@ppikanto</a> dan 3 teman Anda!</p>
+                <span>
+                  <p>* Jangan lupa set akunmu sebagai public account (jgn di private) agar kami dapat memposting ulang postingan Anda!</p>
+                </span>
+              </li>
+              <li>
+                <p>Saksikan event <a href="http://scuad-id.com">SCUAD 2021</a> sampai akhir untuk mengetahui hasilnya!</p>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <div id="loginBgWrapper">
+        <img id="logo" src="data/scuad_logo.png?version=2021031100">
+        <img id="loginBg" src="data/login_bg.jpg?version=2021031100">
       </div>
     </section>
 
-    <script src="js/libs/pixi.js?version=2021030700"></script>
-    <script src="js/libs/pixi-filters.js?version=2021030700"></script>
-    <script src="js/virtual-bandung.js?version=2021030700"></script>
-    <script src="js/login-modal.js?version=2021030700"></script>
-    
-    <!-- ScuadURP -->
-    <section id="urls">
-      <a id="urpLink" href="bdg1/"></a>
+    <section id="urlArea">
+      <a id="lp" href="lp/index.html"></a>
+      <input id="openFlg" type="hidden" value="challenge">
     </section>
+
+    <script src="js/login.js?version=2021031100"></script>
   </body>
 </html>

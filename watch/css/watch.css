@@ -1,0 +1,77 @@
+@font-face {
+  font-family: Regular;
+  src: url('../../font/Poppins-Regular.ttf');
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: SemiBold;
+  src: url('../../font/Poppins-SemiBold.ttf');
+  font-weight: bolder;
+}
+
+@font-face {
+  font-family: PCSenior;
+  src: url('../../font/pcsenior.ttf');
+}
+
+body {
+  margin: 0;
+}
+
+.content-wrapper {
+  position: fixed;
+  z-index: 2;
+  text-align: center;
+  width: 1600px;
+  max-width: calc(100vw - 100px);
+  height: 900px;
+  max-height: calc(100vw - 100px);
+  background-color: rgba(116, 35, 223, 0.8);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.content-wrapper h1 {
+  margin: 5%;
+  font-family: PCSenior;
+  font-size: 20px;
+}
+
+figure {
+  position: relative;
+  margin: 5%;
+}
+
+iframe {
+  width: 80vw;
+  height: calc(80vw * 9 / 16);
+}
+
+#urlArea {
+  display: none;
+}
+
+#bgWrapper {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0 auto;
+  background-color: blueviolet;
+}
+
+#logo {
+  position: absolute;
+  z-index: 2;
+}
+
+#bg {
+  width: 100%;
+  height: 100vh;
+  max-height: 100%;
+  object-fit: cover;
+}
