@@ -1,26 +1,38 @@
 <!doctype html>
 <html>
   <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2235QSYGKT"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-2235QSYGKT');
+    </script>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="css/watch.css?version=2021031100">
+    <link rel="stylesheet" href="css/watch.css?version=2021031300">
     <title>Virtual Bandung - Watch</title>
   </head>
   <body>
     <section id="watchArea">
       <div class="content-wrapper">
-        <h1>Watch Virtual Bandung world from outside</h1>
-        <a href="http://bit.ly/scuadxppikanto">SCUADXPPIKANTO</a>
-        <figure>
-          <iframe width="560" height="315" src="https://www.youtube.com/embed/N0CmrDnJrz0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        </figure>
+        <div class="content-title">
+          <h1>Watch Virtual Bandung world from outside</h1>
+          <button onclick="location.href='http://bit.ly/scuadxppikanto'">PPI KANTO JEPANG</button>
+        </div>
+        <div id="videoWrapper">
+          <span>Streaming from 15:30(WIB)...</span>
+          <iframe id="video" width="560" height="315" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
       </div>
       <div id="bgWrapper">
-        <img id="logo" src="../data/scuad_logo.png?version=2021031100">
-        <img id="bg" src="../data/login_bg.jpg?version=2021031100">
+        <img id="logo" src="../data/scuad_logo.png?version=2021031300">
+        <img id="bg" src="../data/login_bg.jpg?version=2021031300">
       </div>
     </section>
 
@@ -28,7 +40,5 @@
       <a id="lp" href="lp/index.html"></a>
       <input id="openFlg" type="hidden" value="challenge">
     </section>
-
-    <script src="js/login.js?version=2021031100"></script>
   </body>
 </html>

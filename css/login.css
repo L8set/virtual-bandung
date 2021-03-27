@@ -20,6 +20,14 @@ body {
   margin: 0;
 }
 
+#preloader {
+  position: fixed;
+  z-index: 20;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .login-area {
   position: fixed;
   z-index: 10;

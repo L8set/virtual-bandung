@@ -201,23 +201,62 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     constructor() {
       this.initFlg = false;
       this.showFlg = false;
+      this.wrapper = new PIXI.Sprite();
+      this.wrapper.anchor.set(0.5, 1);
       this.box = null;
       this.text = null;
       this.button = null;
       this.exit = null;
+      this._viewLevel = 0;
+      this.intervalId = 0;
+      this.isRight = true;
       PIXI.TextMetrics.BASELINE_SYMBOL += 'あ｜';
     }
+    get viewLevel() {
+      return this._viewLevel;
+    }
+    set viewLevel(_viewLevel) {
+      this._viewLevel = Math.min(Math.max(_viewLevel, 0), 1);
+    }
     get width() {
-      return Math.min(500, App.width * 0.9);
+      return Math.min(600, App.width * 0.9);
     }
     get height() {
       return Math.min(900, App.height * 0.9);
     }
+    get baseX() {
+      const x = Math.min(App.width / 9 + this.width / 2, App.width / 2);
+      if (this.isRight) {
+        return x;
+      } else {
+        return App.width - x;
+      }
+    }
+    get baseY() {
+      return App.height / 2;
+    }
+    get boxHeightScale() {
+      if (this.viewLevel > 0.5) {
+        return 1;
+      } else {
+        return this.viewLevel / 0.5;
+      }
+    }
+    get textAlpha() {
+      if (this.viewLevel < 0.5) {
+        return 0;
+      } else if (this.viewLevel >= 1) {
+        return 1;
+      } else {
+        return (this.viewLevel - 0.5) / 0.5;
+      }
+    }
     init() {
+      container.addChild(this.wrapper);
       this.box = images.rectangle.sprite;
       this.box.alpha = 0.8;
       this.box.anchor.set(0.5);
-      container.addChild(this.box);
+      this.wrapper.addChild(this.box);
       this.textStyle = new PIXI.TextStyle({
         fontFamily: 'Poppins',
         align: 'left',
@@ -236,27 +275,23 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       });
       this.initFlg = true;
     }
-    resize() {
-      this.box.position.set(Math.min(App.width / 8 + this.width / 2, App.width / 2), App.height / 2);
-      this.box.scale.set(this.width / 100, this.height / 100);
-      this.text.style.wordWrapWidth = this.width * 0.95;
-      this.text.position.set(0, -48);
-      this.text.scale.set(100 / this.width, 100 / this.height);
-      this.text.style.fontSize = (this.width + this.height) / 55;
-      this.button.position.set(0, 45);
-      this.button.scale.set(100 / this.width, 100 / this.height);
-      this.button.style.fontSize = (this.width + this.height) / 40;
-    }
     setTextBox(messageId, messageJp) {
+      if (this.text) {
+        this.wrapper.removeChild(this.text);
+      }
       this.text = new PIXI.Text(`${messageId}\n\n${messageJp}`, this.textStyle);
-      this.text.anchor.set(0.5, 0);
-      this.box.addChild(this.text);
+      this.text.anchor.set(0.5);
+      this.wrapper.addChild(this.text);
     }
     setLinkButton(link, buttonName) {
+      if (this.button) {
+        this.wrapper.removeChild(this.button);
+      }
       this.button = new PIXI.Text(buttonName, this.buttonStyle);
       this.button.interactive = true;
       this.button
       .on('click', () => window.open(link))
+      .on('tap', () => window.open(link))
       .on('pointerover', () => {
         this.button.style.color = 'green';
         this.button.style.fontSize = (this.width + this.height) / 35;
@@ -265,15 +300,27 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         this.button.style.color = 'pink';
         this.button.style.fontSize = (this.width + this.height) / 40;
       });
-      this.button.anchor.set(0.5, 1);
-      this.box.addChild(this.button);
+      this.button.anchor.set(0.5);
+      this.wrapper.addChild(this.button);
     }
-    show(messageId, messageJp, link, buttonName) {
+    resize() {
+      if (!this.initFlg) return;
+      this.box.position.set(this.baseX, this.baseY);
+      this.box.scale.set(this.width / 100, this.height / 100 * this.boxHeightScale);
+      this.text.style.wordWrapWidth = this.width * 0.95;
+      this.text.position.set(this.baseX, this.baseY * 0.9);
+      this.text.style.fontSize = (this.width + this.height) / 55;
+      this.text.alpha = this.textAlpha;
+      this.button.position.set(this.baseX, this.baseY * 1.7);
+      this.button.style.fontSize = (this.width + this.height) / 40;
+      this.button.alpha = this.textAlpha;
+    }
+    show(messageId, messageJp, link, buttonName, isRight) {
       if (this.showFlg) return;
       if (!this.initFlg) {
         this.init();
       }
-      this.box.removeChildren();
+      this.isRight = isRight;
       this.setTextBox(messageId, messageJp);
       this.setLinkButton(link, buttonName);
       this.box.alpha = 0.8;
@@ -282,8 +329,16 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     hide() {
       if (!this.showFlg) return;
-      this.box.alpha = 0;
       this.showFlg = false;
+    }
+    tick() {
+      if (this.showFlg && this.viewLevel < 1) {
+        this.viewLevel += 0.1;
+        this.resize();
+      } else if (!this.showFlg && this.viewLevel > 0) {
+        this.viewLevel -= 0.1;
+        this.resize();
+      }
     }
   };
 
@@ -301,9 +356,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       const sprite = imageInfo.sprite;
       sprite.anchor.set(0.5, 1);
       sprite.on('pointerover', () => this.onPointerOver())
-      .on('pointerout', () => this.onPointerOut())
-      // .on('click', () => this.onClick())
-      // .on('tap', () => this.onClick());
+      .on('pointerout', () => this.onPointerOut());
     }
     get sprite() {
       return this.imageInfo.sprite;
@@ -339,7 +392,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     }
     showMessage() {
       if (!this.link) return;
-      Message.show(this.messageId, this.messageJp, this.link, this.button);
+      Message.show(this.messageId, this.messageJp, this.link, this.button, this.xIndex > 0);
     }
     openLink() {
       if (!this.link) return;
@@ -353,7 +406,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
         this.sprite.filters = [];
       }
       this.sprite.interactive = false;
-      if (this.scale > 0.9 && this.scale < 1.1) {
+      if (Math.abs(this.scale - 1) < 0.03) {
         this.sprite.filters.push(CONSTS.FILTER.GLOW_WHITE);
         this.sprite.interactive = true;
         this.showMessage();
@@ -378,16 +431,6 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       this.updateFilters();
     }
     tick(ticker) {
-      // const countUnit = 30;
-      // const expandRatio = 0.1;
-      // const count = ticker % countUnit;
-      // if (count < countUnit / 2) {
-      //   const ratio = 1 + expandRatio * count / (countUnit / 2);
-      //   this.sprite.scale.set(this.scale * ratio, this.scale / ratio);
-      // } else {
-      //   const ratio = 1 + expandRatio - expandRatio * (count - countUnit / 2) / (countUnit / 2);
-      //   this.sprite.scale.set(this.scale * ratio, this.scale / ratio);
-      // }
     }
   }
 
@@ -612,23 +655,42 @@ VirtualBandung.Play = VirtualBandung.Play || {};
     init() {
       this._buildings = [
         [images.building1, 1.5, 'https://worldscuad.com/', 'LEARN MORE',
-        `SCUAD terlahir dari ide dua orang perempuan yang bertemu di Tokyo. Mereka memiliki visi yang sama untuk menghubungkan anak-anak muda lintas negara dalam berkontribusi ide dan kreativitas, untuk menyelesaikan masalah sosial dan budaya serta menjadikan dunia yang lebih baik.`,
-        `SCUADのはじまりは東京で出会った2人の女性たちのアイディア。国を越えて同世代の若い人たちを繋ぎ、ソーシャルアクションの分野とカルチャーの分野も繋いでみんなでクリエイティブなものごとを生み出せたら素敵な世界をつくれるはず、と同じ夢を描いて動き出しました。`],
+`SCUAD terlahir dari ide dua orang perempuan yang bertemu di Tokyo.
+Mereka memiliki visi yang sama untuk menghubungkan anak-anak muda lintas negara dalam berkontribusi ide dan kreativitas, untuk menyelesaikan masalah sosial dan budaya serta menjadikan dunia yang lebih baik.`,
+`SCUADのはじまりは東京で出会った2人の女性たちのアイディア。
+国を越えて同世代の若い人たちを繋ぎ、ソーシャルアクションの分野とカルチャーの分野も繋いで
+みんなでクリエイティブなものごとを生み出せたら素敵な世界をつくれるはず、と同じ夢を描いて動き出しました。`],
         [images.building2, -1.5, 'https://www.instagram.com/ppikanto/', 'KNOW MORE',
-        `SCUAD kini telah berkembang menjadi sebuah grup besar yang terdiri dari beragam orang-orang yang berbagi energi dan kreativitas yang sama. Acara SCUAD dapat terlaksana dengan adanya bantuan dari PPI Kanto. Jika kamu tertarik dengan kuliah di Jepang, kunjungi dan follow akun Instagram @ppikanto!`,
-        `気づけばSCUADは成長し、同じ志と高いクリエイティビティを持つ様々な人たちが集まる大きなチームになりました。このイベントはインドネシア留学生協会関東支部（PPI Kanto）を運営パートナーに迎えたことで実現しています。`],
+`SCUAD kini telah berkembang menjadi sebuah grup besar yang terdiri dari beragam orang-orang yang berbagi energi dan kreativitas yang sama.
+Acara SCUAD dapat terlaksana dengan adanya bantuan dari PPI Kanto.
+Jika kamu tertarik dengan kuliah di Jepang, kunjungi dan follow akun Instagram @ppikanto!`,
+`気づけばSCUADは成長し、同じ志と高いクリエイティビティを持つ様々な人たちが集まる大きなチームになりました。
+このイベントはインドネシア留学生協会関東支部 (PPI Kanto) を運営パートナーに迎えたことで実現しています。`],
         [images.building3, 3.5, 'https://www.prulmarket.com/2PfkYA2Mg9/home', 'CHECK THE MARKET',
-        `Sebuah acara tidak akan besar dan sukses tanpa adanya dukungan dari tim humas! Ya, SCUAD dengan bangga berkolaborasi dengan PRUL Channel dan PRUL Market, sebuah marketplace khusus barang-barang hobi yang unik dari Jepang. Kalau kamu tertarik dengan konten seputar jalan-jalan virtual di Jepang atau unboxing barang-barang mainan dari Jepang, jangan lupa cek YouTube PRUL Channel dan aplikasi PRUL Market ya!`,
-        `イベントで大きなインパクトを出すには広報がかかせません。SCUADは現地メディアパートナーとして日本のホビーアイテムを扱う大手マーケットプレイスPrul MarketとPrul Channelにサポートいただいています。`],
+`Sebuah acara tidak akan besar dan sukses tanpa adanya dukungan dari tim humas!
+Ya, SCUAD dengan bangga berkolaborasi dengan PRUL Channel dan PRUL Market, sebuah marketplace khusus barang-barang hobi yang unik dari Jepang.
+Kalau kamu tertarik dengan konten seputar jalan-jalan virtual di Jepang atau unboxing barang-barang mainan dari Jepang, jangan lupa cek YouTube PRUL Channel dan aplikasi PRUL Market ya!`,
+`イベントで大きなインパクトを出すには広報がかかせません
+SCUADは現地メディアパートナーとして日本のホビーアイテムを扱う大手マーケットプレイスPrul MarketとPrul Channelにサポートいただいています。`],
         [images.building4, -3.5, 'https://future.nec/en/', 'LEARN MORE',
-        `Bagaimana SCUAD bisa membuat acara yang mengundang para penyanyi ternama Indonesia? Tentu saja kami tidak sendiri. Kami bersyukur acara SCUAD ini disponsori oleh NEC. Apakah kamu familiar dengan istilah “Inovasi dari Jepang”? Yuk cek website mereka dan cari tahu tentang masa depan teknologi! `,
-        `この挑戦的なイベントは、NEC未来創造会議や個人スポンサーの皆さまによって叶えることが出来ました。インドネシアの未来もわくわくさせる”日本発イノベーション”のこの先はこちらから。（英語ページが開きます。日本語へはリンク先で切り替えて下さい）`],
+`Bagaimana SCUAD bisa membuat acara yang mengundang para penyanyi ternama Indonesia?
+Tentu saja kami tidak sendiri. Kami bersyukur acara SCUAD ini disponsori oleh NEC.
+Apakah kamu familiar dengan istilah “Inovasi dari Jepang”?
+Yuk cek website mereka dan cari tahu tentang masa depan teknologi! `,
+`この挑戦的なイベントは、NEC未来創造会議や個人スポンサーの皆さまによって叶えることが出来ました。
+インドネシアの未来もわくわくさせる“日本発イノベーション”のこの先はこちらから。
+（英語ページが開きます。日本語へはリンク先で切り替えて下さい）`],
         [images.building5, 2, 'https://www.youtube.com/watch?v=LjQDIWmS7a0', 'WATCH',
-        `Ide-ide cemerlang dari para SCUADers akan dinilai oleh juri-juri keren di SCUAD. Kami mengucapkan terima kasih atas dukungan dari KBRI Tokyo, Garuda Indonesia perwakilan Tokyo, dan tentunya Disbudpar Kota Bandung sebagai juri dalam acara ini!`,
-        `バンドン市の観光と街づくりをテーマにした素敵な未来を作るアクションのジャッジとして、在日本インドネシア大使館、ガルーダエアライン東京社、バンドン市観光局にお越しいただきました。SCUADersたちのアイディアが、バンドン市から世界を変える種となりますように。`],
+`Ide-ide cemerlang dari para SCUADers akan dinilai oleh juri-juri keren di SCUAD.
+Kami mengucapkan terima kasih atas dukungan dari KBRI Tokyo, Garuda Indonesia perwakilan Tokyo, dan tentunya Disbudpar Kota Bandung sebagai juri dalam acara ini!`,
+`バンドン市の観光と街づくりをテーマにした素敵な未来を作るアクションのジャッジとして、
+在日本インドネシア大使館、ガルーダエアライン東京社、バンドン市観光局にお越しいただきました。
+SCUADersたちのアイディアが、バンドン市から世界を変える種となりますように。`],
         [images.building6, -3, 'https://scuad.myshopify.com/', 'CHECK THE SHOP',
-        `Save the moment! Miliki merchandise SCUAD sekarang juga sebelum kehabisan!`,
-        `さぁ、SCUADのイベントです！イベントグッズを着てSCUADのメッセージを広めながら楽しくて素敵な未来を作っていきましょう！`],
+`Save the moment!
+Miliki merchandise SCUAD sekarang juga sebelum kehabisan!`,
+`さぁ、SCUADのイベントです！
+イベントグッズを着てSCUADのメッセージを広めながら楽しくて素敵な未来を作っていきましょう！`],
         [images.gate, 0, null, null, null]
       ].map(([imageInfo, x, link, button, messageId, messageJp], index) => new Building(imageInfo, x, index + 1, link, button, messageId, messageJp));
       Building.count = this._buildings.length;
@@ -676,6 +738,36 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       this.resize();
     }
   };
+
+  const Swipe = VirtualBandung.Play.swipe = new class {
+    constructor() {
+      this.style = new PIXI.TextStyle({
+        fontFamily: 'Poppins',
+        align: 'center',
+        fill: 'violet',
+        fontWeight: 'bold'
+      });
+      this.sprite = new PIXI.Text('swipe', this.style);
+      this.sprite.anchor.set(0.5, 1);
+      this.alpha = 1;
+    }
+    show() {
+      container.addChild(this.sprite);
+      this.resize();
+    }
+    resize() {
+      this.style.fontSize = 58;
+      this.sprite.position.set(App.width / 2, App.height - 10);
+      this.sprite.alpha = Math.abs(this.alpha);
+    }
+    tick() {
+      this.alpha += 0.02;
+      if (this.alpha >= 1) {
+        this.alpha = -1;
+      }
+      this.resize();
+    }
+  }
 
   const Event = new class {
     constructor() {
@@ -804,7 +896,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       const lastUnitPosition = nextIndex * CONSTS.SCROLL.UNIT
       const nextRatio = (() => {
         const delta = currentPosition - lastUnitPosition;
-        const ratio = delta / CONSTS.SCROLL.UNIT;
+        const ratio = delta / (CONSTS.SCROLL.UNIT * 0.7);
         if (ratio < 1) {
           return ratio;
         } else {
@@ -878,6 +970,8 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       Event.tick(this._tick);
       Background.tick(this._tick);
       Buildings.tick(this._tick);
+      Message.tick();
+      Swipe.tick();
       this._tick++;
       App.render();
     }
@@ -910,6 +1004,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       Buildings.showAll();
       Character.show();
       Logo.show();
+      Swipe.show();
 
       this.resizeImages();
       App.render(container);
@@ -919,6 +1014,7 @@ VirtualBandung.Play = VirtualBandung.Play || {};
       Character.resizeWrapper();
       Buildings.updateAll();
       Logo.resize();
+      Swipe.resize();
     }
     onLoadImages(resources) {
       let textures;
@@ -988,13 +1084,6 @@ VirtualBandung.Play = VirtualBandung.Play || {};
   };
 
   VirtualBandung.Play.start = function() {
-    // const playWrapper = document.getElementById(CONSTS.ELEMENT_ID.WRAPPER);
-    // playWrapper.style.transformOrigin = 'top left';
-    // playWrapper.style.transform = `scale(${1 / window.devicePixelRatio})`;
-    // App.pixelRatio = window.devicePixelRatio;
-    // if (ImageLoader.loaded) {
-    //   Event.onResize();
-    // }
     Event.playable = true;
   };
 

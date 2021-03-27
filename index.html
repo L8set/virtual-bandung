@@ -1,20 +1,33 @@
 <!doctype html>
 <html>
   <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2235QSYGKT"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-2235QSYGKT');
+    </script>
+
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="css/login.css?version=2021031100">
+    <link rel="stylesheet" href="css/login.css?version=2021031302">
     <title>Virtual Bandung - Entrance</title>
   </head>
   <body>
     <section id="loginArea" class="login-area">
+      <div id="preloader" class="login-contents__hidden">
+        <img src="http://cdn.lowgif.com/full/896fb7c995f004a0-.gif" width="200px">
+      </div>
       <div class="login-wrapper">
         <div class="login-contents">
           <h1 class="login-contents__head">ENTER</h1>
-          <h2 class="login-contents__head">with Compute/Tablet</h2>
+          <h2 class="login-contents__head">with computer</h2>
 
           <div id="form" class="login-contents__form">
             <div class="login-contents__field">
@@ -69,13 +82,14 @@
           </div>
         </div>
       </div>
+      <br>
       <div class="login-wrapper">
         <div class="login-contents">
           <h1 class="login-contents__head">WATCH</h1>
           <h2 class="login-contents__head">from mobile</h2>
-          <div class="login-contents__hint">Chrome/Firefox/Edge or Safari</div>
+          <div class="login-contents__hint">HELP (trouble entering)</div>
           <div class="login-contents__form-button">
-            <button type="button" id="watchBtn" class="login-contents__button" onclick="location.href='watch/index.html?version=2021031100'">Go!</button>
+            <button type="button" id="watchBtn" class="login-contents__button" onclick="location.href='watch/index.html?version=2021031302'">Go!</button>
           </div>
         </div>
       </div>
@@ -119,16 +133,16 @@
         </div>
       </div>
       <div id="loginBgWrapper">
-        <img id="logo" src="data/scuad_logo.png?version=2021031100">
-        <img id="loginBg" src="data/login_bg.jpg?version=2021031100">
+        <img id="logo" src="data/scuad_logo.png?version=2021031302">
+        <img id="loginBg" src="data/login_bg.jpg?version=2021031302">
       </div>
     </section>
 
     <section id="urlArea">
       <a id="lp" href="lp/index.html"></a>
-      <input id="openFlg" type="hidden" value="challenge">
+      <input id="openFlg" type="hidden" value="started">
     </section>
 
-    <script src="js/login.js?version=2021031100"></script>
+    <script src="js/login.js?version=2021031302"></script>
   </body>
 </html>

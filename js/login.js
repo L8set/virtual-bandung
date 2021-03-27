@@ -23,7 +23,8 @@ VirtualBandung.Login = VirtualBandung.Login || {};
         SEX: 'sexMsg'
       },
       LP_LINK: 'lp',
-      OPEN_FLG: 'openFlg'
+      OPEN_FLG: 'openFlg',
+      PRELOADER: 'preloader'
     },
     ELEMENT_NAME: {
       FORM_INPUT: 'formInput'
@@ -194,9 +195,16 @@ VirtualBandung.Login = VirtualBandung.Login || {};
           return params;
         }, new URLSearchParams());
 
+      const preloader = document.getElementById(CONSTS.ELEMENT_ID.PRELOADER);
+      if (preloader.classList.contains(CONSTS.CSS_CLASS.HIDDEN)) {
+        preloader.classList.remove(CONSTS.CSS_CLASS.HIDDEN);
+      }
       fetch(`${CONSTS.URL}?${queryParams}`)
         .then(response => { console.log(response); return response.json() })
         .then(response => {
+          if (!preloader.classList.contains(CONSTS.CSS_CLASS.HIDDEN)) {
+            preloader.classList.add(CONSTS.CSS_CLASS.HIDDEN);
+          }
           switch (response.result) {
             case CONSTS.RESULT_CODE.OK:
               VirtualBandung.Login.id = response.id;
@@ -207,7 +215,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
                 CommonUtil.fade(loginArea, 500, CONSTS.FADE_MODE.OUT);
                 showMessage();
               } else {
-                document.getElementById(CONSTS.ELEMENT_ID.EMAIL).click();
+                document.getElementById(CONSTS.ELEMENT_ID.LP_LINK).click();
               }
               break;
             case CONSTS.RESULT_CODE.NG:
@@ -276,13 +284,7 @@ VirtualBandung.Login = VirtualBandung.Login || {};
 
   {
     VirtualBandung.Login.id = window.sessionStorage.getItem([CONSTS.SESSION_KEY.ID]);
-    // if (!VirtualBandung.Login.id) {
     init();
     ContentsCreator.createSignUpContents();
-    // } else {
-    //   const loginArea = document.getElementById(CONSTS.ELEMENT_ID.LOGIN_AREA);
-    //   loginArea.style.display = 'none';
-    //   showMessage();
-    // }
   }
 })(this);
